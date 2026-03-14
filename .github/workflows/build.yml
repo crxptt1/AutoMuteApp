@@ -1,0 +1,27 @@
+name: Build AutoMuteApp
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile with GCC
+        run: gcc -Wall -Wextra src/*.c -Iinclude -lole32 -luuid -lpropsys -lpsapi -ladvapi32 -mwindows -o AutoMuteApp.exe
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoMuteApp
+          path: AutoMuteApp.exe
