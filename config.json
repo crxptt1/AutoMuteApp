@@ -1,6 +1,9 @@
 {
   "poll_interval_ms": 2000,
-  "target_application": "Discord.exe",
+  "target_applications": [
+    "Discord.exe"
+  ],
+  "autostart": false,
   "devices": [
     {
       "name_contains": "SteelSeries Sonar - Microphone"
