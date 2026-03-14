@@ -1,15 +1,13 @@
 {
   "poll_interval_ms": 2000,
+  "autostart": true,
   "target_applications": [
-    "Discord.exe"
+    "Discord.exe",
+    "parsecd.exe"
   ],
-  "autostart": false,
   "devices": [
     {
       "name_contains": "SteelSeries Sonar - Microphone"
-    },
-    {
-      "name_contains": "Arctis 7P+"
     }
   ]
 }
