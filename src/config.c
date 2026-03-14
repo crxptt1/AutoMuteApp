@@ -37,9 +37,11 @@ static char* load_file_utf8(const wchar_t* path)
 void load_config(const wchar_t* path)
 {
     // Defaults
-    wcscpy(g_config.target_app, L"Discord.exe");
+    wcscpy(g_config.target_apps[0], L"Discord.exe");
+    g_config.target_app_count = 1;
     g_config.poll_interval_ms = 2000;
     g_config.device_count = 0;
+    g_config.autostart = 0;
 
     char* json_utf8 = load_file_utf8(path);
     if (!json_utf8) return;
@@ -54,10 +56,32 @@ void load_config(const wchar_t* path)
     if (cJSON_IsNumber(j_poll))
         g_config.poll_interval_ms = j_poll->valueint;
 
-    // target_application
-    cJSON* j_target = cJSON_GetObjectItemCaseSensitive(root, "target_application");
-    if (cJSON_IsString(j_target) && j_target->valuestring)
-        mbstowcs(g_config.target_app, j_target->valuestring, MAX_NAME);
+    // target_applications (array) – new multi-app format
+    cJSON* j_targets = cJSON_GetObjectItemCaseSensitive(root, "target_applications");
+    if (cJSON_IsArray(j_targets)) {
+        int count = 0;
+        cJSON* item = NULL;
+        cJSON_ArrayForEach(item, j_targets) {
+            if (count >= MAX_APPS) break;
+            if (cJSON_IsString(item) && item->valuestring) {
+                mbstowcs(g_config.target_apps[count], item->valuestring, MAX_NAME);
+                count++;
+            }
+        }
+        g_config.target_app_count = count;
+    } else {
+        // Backward compatibility: single target_application string
+        cJSON* j_target = cJSON_GetObjectItemCaseSensitive(root, "target_application");
+        if (cJSON_IsString(j_target) && j_target->valuestring) {
+            mbstowcs(g_config.target_apps[0], j_target->valuestring, MAX_NAME);
+            g_config.target_app_count = 1;
+        }
+    }
+
+    // autostart
+    cJSON* j_autostart = cJSON_GetObjectItemCaseSensitive(root, "autostart");
+    if (cJSON_IsBool(j_autostart))
+        g_config.autostart = cJSON_IsTrue(j_autostart);
 
     // devices array
     cJSON* j_devices = cJSON_GetObjectItemCaseSensitive(root, "devices");

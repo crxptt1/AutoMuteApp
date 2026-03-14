@@ -63,17 +63,21 @@ static void mute_playback_on_device(IMMDevice* dev)
         if (h)
         {
             GetModuleBaseNameW(h, NULL, name, MAX_PATH);
-            if (!_wcsicmp(name, g_config.target_app))
+            for (int j = 0; j < g_config.target_app_count; j++)
             {
-                IAudioSessionControl_QueryInterface(
-                    ctl, &IID_ISimpleAudioVolume, (void**)&vol);
+                if (!_wcsicmp(name, g_config.target_apps[j]))
+                {
+                    IAudioSessionControl_QueryInterface(
+                        ctl, &IID_ISimpleAudioVolume, (void**)&vol);
 
-                BOOL muted;
-                ISimpleAudioVolume_GetMute(vol, &muted);
-                if (!muted)
-                    ISimpleAudioVolume_SetMute(vol, TRUE, NULL);
+                    BOOL muted;
+                    ISimpleAudioVolume_GetMute(vol, &muted);
+                    if (!muted)
+                        ISimpleAudioVolume_SetMute(vol, TRUE, NULL);
 
-                ISimpleAudioVolume_Release(vol);
+                    ISimpleAudioVolume_Release(vol);
+                    break;
+                }
             }
             CloseHandle(h);
         }
