@@ -1,0 +1,12 @@
+{
+  "poll_interval_ms": 2000,
+  "target_application": "Discord.exe",
+  "devices": [
+    {
+      "name_contains": "SteelSeries Sonar - Microphone"
+    },
+    {
+      "name_contains": "SteelSeries Sonar - Gaming"
+    }
+  ]
+}
