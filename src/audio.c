@@ -7,7 +7,6 @@
 #include <windows.h>
 #include <audiopolicy.h>
 #include <functiondiscoverykeys_devpkey.h>
-#include <psapi.h>
 
 static BOOL device_matches(IMMDevice* dev)
 {
@@ -32,8 +31,8 @@ static BOOL device_matches(IMMDevice* dev)
 
 static void mute_playback_on_device(IMMDevice* dev)
 {
-    IAudioSessionManager2* mgr;
-    IAudioSessionEnumerator* en;
+    IAudioSessionManager2* mgr = NULL;
+    IAudioSessionEnumerator* en = NULL;
 
     if (FAILED(IMMDevice_Activate(dev, &IID_IAudioSessionManager2,
         CLSCTX_ALL, NULL, (void**)&mgr)))
@@ -47,36 +46,47 @@ static void mute_playback_on_device(IMMDevice* dev)
 
     for (int i = 0; i < count; i++)
     {
-        IAudioSessionControl* ctl;
-        IAudioSessionControl2* ctl2;
-        ISimpleAudioVolume* vol;
+        IAudioSessionControl* ctl = NULL;
+        IAudioSessionControl2* ctl2 = NULL;
+        ISimpleAudioVolume* vol = NULL;
         DWORD pid;
-        wchar_t name[MAX_PATH];
+        wchar_t path[MAX_PATH];
 
-        IAudioSessionEnumerator_GetSession(en, i, &ctl);
-        IAudioSessionControl_QueryInterface(
-            ctl, &IID_IAudioSessionControl2, (void**)&ctl2);
+        if (FAILED(IAudioSessionEnumerator_GetSession(en, i, &ctl)))
+            continue;
+        if (FAILED(IAudioSessionControl_QueryInterface(
+            ctl, &IID_IAudioSessionControl2, (void**)&ctl2)))
+        {
+            IAudioSessionControl_Release(ctl);
+            continue;
+        }
 
         IAudioSessionControl2_GetProcessId(ctl2, &pid);
-        HANDLE h = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+        HANDLE h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
 
         if (h)
         {
-            GetModuleBaseNameW(h, NULL, name, MAX_PATH);
-            for (int j = 0; j < g_config.target_app_count; j++)
+            DWORD size = MAX_PATH;
+            if (QueryFullProcessImageNameW(h, 0, path, &size))
             {
-                if (!_wcsicmp(name, g_config.target_apps[j]))
+                const wchar_t* exe_name = wcsrchr(path, L'\\');
+                exe_name = exe_name ? exe_name + 1 : path;
+                for (int j = 0; j < g_config.target_app_count; j++)
                 {
-                    IAudioSessionControl_QueryInterface(
-                        ctl, &IID_ISimpleAudioVolume, (void**)&vol);
+                    if (!_wcsicmp(exe_name, g_config.target_apps[j]))
+                    {
+                        if (SUCCEEDED(IAudioSessionControl_QueryInterface(
+                            ctl, &IID_ISimpleAudioVolume, (void**)&vol)))
+                        {
+                            BOOL muted;
+                            ISimpleAudioVolume_GetMute(vol, &muted);
+                            if (!muted)
+                                ISimpleAudioVolume_SetMute(vol, TRUE, NULL);
 
-                    BOOL muted;
-                    ISimpleAudioVolume_GetMute(vol, &muted);
-                    if (!muted)
-                        ISimpleAudioVolume_SetMute(vol, TRUE, NULL);
-
-                    ISimpleAudioVolume_Release(vol);
-                    break;
+                            ISimpleAudioVolume_Release(vol);
+                        }
+                        break;
+                    }
                 }
             }
             CloseHandle(h);
@@ -87,8 +97,10 @@ static void mute_playback_on_device(IMMDevice* dev)
     }
 
 out:
-    IAudioSessionEnumerator_Release(en);
-    IAudioSessionManager2_Release(mgr);
+    if (en)
+        IAudioSessionEnumerator_Release(en);
+    if (mgr)
+        IAudioSessionManager2_Release(mgr);
 }
 
 void scan_devices_and_mute(void)
