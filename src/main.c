@@ -32,13 +32,15 @@ static void get_config_path(wchar_t* buffer, size_t buffer_len)
 
     *(last_slash + 1) = L'\0';
 
-    if (wcslen(exe_path) + wcslen(L"config.json") + 1 > buffer_len) {
+    size_t exe_len = wcslen(exe_path);
+    size_t config_len = wcslen(L"config.json");
+    if (exe_len + config_len + 1 > buffer_len) {
         wcsncpy(buffer, L"config.json", buffer_len - 1);
         buffer[buffer_len - 1] = L'\0';
         return;
     }
 
-    if (swprintf(buffer, buffer_len, L"%ls%ls", exe_path, L"config.json") <= 0) {
+    if (swprintf(buffer, buffer_len, L"%s%s", exe_path, L"config.json") <= 0) {
         wcsncpy(buffer, L"config.json", buffer_len - 1);
         buffer[buffer_len - 1] = L'\0';
     }
@@ -57,10 +59,10 @@ static void configure_autostart(void)
             wchar_t quoted_path[MAX_PATH + 2];
             size_t exe_len = wcslen(exe_path);
             if (exe_len + 3 <= ARRAYSIZE(quoted_path)) {
-                int written = swprintf(quoted_path, ARRAYSIZE(quoted_path), L"\"%ls\"", exe_path);
-                if (written > 0) {
-                RegSetValueExW(hKey, AUTOSTART_VALUE, 0, REG_SZ,
-                    (const BYTE*)quoted_path, (DWORD)((written + 1) * sizeof(wchar_t)));
+                if (swprintf(quoted_path, ARRAYSIZE(quoted_path), L"\"%s\"", exe_path) > 0) {
+                    size_t quoted_len = wcslen(quoted_path);
+                    RegSetValueExW(hKey, AUTOSTART_VALUE, 0, REG_SZ,
+                    (const BYTE*)quoted_path, (DWORD)((quoted_len + 1) * sizeof(wchar_t)));
                 }
             }
         }
