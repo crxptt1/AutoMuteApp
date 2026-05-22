@@ -38,8 +38,10 @@ static void get_config_path(wchar_t* buffer, size_t buffer_len)
         return;
     }
 
-    wcscpy(buffer, exe_path);
-    wcscat(buffer, L"config.json");
+    if (swprintf(buffer, buffer_len, L"%ls%ls", exe_path, L"config.json") <= 0) {
+        wcsncpy(buffer, L"config.json", buffer_len - 1);
+        buffer[buffer_len - 1] = L'\0';
+    }
 }
 
 static void configure_autostart(void)
@@ -53,10 +55,13 @@ static void configure_autostart(void)
         DWORD len = GetModuleFileNameW(NULL, exe_path, MAX_PATH);
         if (len > 0 && len < MAX_PATH) {
             wchar_t quoted_path[MAX_PATH + 2];
-            int written = swprintf(quoted_path, ARRAYSIZE(quoted_path), L"\"%ls\"", exe_path);
-            if (written > 0 && written < (int)ARRAYSIZE(quoted_path)) {
+            size_t exe_len = wcslen(exe_path);
+            if (exe_len + 3 <= ARRAYSIZE(quoted_path)) {
+                int written = swprintf(quoted_path, ARRAYSIZE(quoted_path), L"\"%ls\"", exe_path);
+                if (written > 0) {
                 RegSetValueExW(hKey, AUTOSTART_VALUE, 0, REG_SZ,
                     (const BYTE*)quoted_path, (DWORD)((written + 1) * sizeof(wchar_t)));
+                }
             }
         }
     } else {
