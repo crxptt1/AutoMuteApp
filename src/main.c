@@ -56,7 +56,7 @@ static void configure_autostart(void)
         wchar_t exe_path[MAX_PATH];
         DWORD len = GetModuleFileNameW(NULL, exe_path, MAX_PATH);
         if (len > 0 && len < MAX_PATH) {
-            wchar_t quoted_path[MAX_PATH + 2];
+            wchar_t quoted_path[MAX_PATH + 3];
             size_t exe_len = wcslen(exe_path);
             if (exe_len + 3 <= ARRAYSIZE(quoted_path)) {
                 if (swprintf(quoted_path, ARRAYSIZE(quoted_path), L"\"%s\"", exe_path) > 0) {
