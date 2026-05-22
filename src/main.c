@@ -34,7 +34,7 @@ static void get_config_path(wchar_t* buffer, size_t buffer_len)
 
     size_t exe_len = wcslen(exe_path);
     size_t config_len = wcslen(L"config.json");
-    if (exe_len + config_len + 1 >= buffer_len) {
+    if (exe_len + config_len + 1 > buffer_len) {
         wcsncpy(buffer, L"config.json", buffer_len - 1);
         buffer[buffer_len - 1] = L'\0';
         return;
@@ -58,7 +58,7 @@ static void configure_autostart(void)
         if (len > 0 && len < MAX_PATH) {
             wchar_t quoted_path[MAX_PATH + 3];
             size_t exe_len = wcslen(exe_path);
-            if (exe_len + 3 < ARRAYSIZE(quoted_path)) {
+            if (exe_len + 3 <= ARRAYSIZE(quoted_path)) {
                 if (swprintf(quoted_path, ARRAYSIZE(quoted_path), L"\"%s\"", exe_path) > 0) {
                     size_t quoted_len = wcslen(quoted_path);
                     RegSetValueExW(hKey, AUTOSTART_VALUE, 0, REG_SZ,
