@@ -53,7 +53,7 @@ static void configure_autostart(void)
         DWORD len = GetModuleFileNameW(NULL, exe_path, MAX_PATH);
         if (len > 0 && len < MAX_PATH) {
             wchar_t quoted_path[MAX_PATH + 2];
-            int written = swprintf(quoted_path, ARRAYSIZE(quoted_path), L"\"%s\"", exe_path);
+            int written = swprintf(quoted_path, ARRAYSIZE(quoted_path), L"\"%ls\"", exe_path);
             if (written > 0 && written < (int)ARRAYSIZE(quoted_path)) {
                 RegSetValueExW(hKey, AUTOSTART_VALUE, 0, REG_SZ,
                     (const BYTE*)quoted_path, (DWORD)((written + 1) * sizeof(wchar_t)));
